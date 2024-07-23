@@ -9,7 +9,7 @@ const io = socketIo(server);
 app.use(express.static('public'));
 
 io.on('connection', (socket) => {
-  console.log('Un utilisateur s\'est connecté');
+  // console.log('Un utilisateur s\'est connecté au site WEB.');
 
   socket.on('offer', (offer, roomId) => {
     socket.to(roomId).emit('offer', offer);
@@ -26,11 +26,20 @@ io.on('connection', (socket) => {
   socket.on('join-room', (roomId) => {
     socket.join(roomId);
     socket.to(roomId).emit('user-connected');
+
+    console.log('Un utilisateur s\'est connecté à la salle ' + roomId);
   });
 
-  socket.on('disconnect', () => {
-    console.log('Un utilisateur s\'est déconnecté');
+  socket.on('leave-room', (roomId) => {
+    socket.leave(roomId);
+    socket.to(roomId).emit('user-disconnected');
+
+    console.log('Un utilisateur s\'est déconnecté de la salle ' + roomId);
   });
+
+  // socket.on('disconnect', () => {
+  //   console.log('Un utilisateur s\'est déconnecté du site WEB.');
+  // });
 });
 
 const PORT = process.env.PORT || 3000;

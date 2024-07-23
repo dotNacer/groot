@@ -12,18 +12,26 @@ const configuration = {
   ]
 };
 
-const startButton = document.getElementById('startButton');
-startButton.addEventListener('click', startCall);
+const roomId = 'test-room'; // Vous pouvez générer un ID unique pour chaque salle
+
+let isCallStarted = false;
+
+socket.on('user-connected', () => {
+  console.log('Un autre utilisateur s\'est connecté');
+  if (!isCallStarted) {
+    startCall();
+  }
+});
 
 function startCall() {
-  const roomId = 'test-room'; // Vous pouvez générer un ID unique pour chaque salle
-  socket.emit('join-room', roomId);
+  if (isCallStarted) return;
+  isCallStarted = true;
 
   navigator.mediaDevices.getUserMedia({
     audio: {
       echoCancellation: false,
       noiseSuppression: false,
-      autoGainControl: false
+      autoGainControl: false,
     }
   })
     .then(stream => {
@@ -47,11 +55,17 @@ function startCall() {
     .catch(error => console.error('Erreur lors de l\'accès au microphone:', error));
 }
 
+function stopCall() {
+  peerConnection.close();
+  peerConnection = null;
+  socket.emit('leave-room', roomId);
+}
+
 function createAndSendOffer() {
   peerConnection.createOffer()
     .then(offer => peerConnection.setLocalDescription(offer))
     .then(() => {
-      socket.emit('offer', peerConnection.localDescription, 'test-room');
+      socket.emit('offer', peerConnection.localDescription, roomId);
     })
     .catch(error => console.error('Erreur lors de la création de l\'offre:', error));
 }
@@ -61,7 +75,7 @@ socket.on('offer', offer => {
     .then(() => peerConnection.createAnswer())
     .then(answer => peerConnection.setLocalDescription(answer))
     .then(() => {
-      socket.emit('answer', peerConnection.localDescription, 'test-room');
+      socket.emit('answer', peerConnection.localDescription, roomId);
     })
     .catch(error => console.error('Erreur lors de la réponse à l\'offre:', error));
 });
@@ -76,11 +90,6 @@ socket.on('ice-candidate', candidate => {
     .catch(error => console.error('Erreur lors de l\'ajout du candidat ICE:', error));
 });
 
-socket.on('user-connected', () => {
-  console.log('Un autre utilisateur s\'est connecté');
-  startCall();
-});
-
 setInterval(() => {
   peerConnection.getStats().then(stats => {
     stats.forEach(report => {
@@ -91,3 +100,5 @@ setInterval(() => {
     });
   });
 }, 1000);
+
+socket.emit('join-room', roomId);

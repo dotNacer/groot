@@ -7,7 +7,8 @@
 </head>
 <body>
     <h1>WebRTC Voice Chat</h1>
-    <button id="startButton">Démarrer l'appel</button>
+    <button onclick="startCall()">Démarrer l'appel</button>
+    <button onclick="stopCall()">Arrêter l'appel</button>
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>

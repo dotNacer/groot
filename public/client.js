@@ -24,8 +24,13 @@ socket.on('user-connected', () => {
 });
 
 function startCall() {
-  if (isCallStarted) return;
+  if (isCallStarted){
+    console.log('Appel déjà en cours');
+    return;
+  }
   isCallStarted = true;
+  socket.emit('join-room', roomId);
+
 
   navigator.mediaDevices.getUserMedia({
     audio: {
@@ -90,15 +95,17 @@ socket.on('ice-candidate', candidate => {
     .catch(error => console.error('Erreur lors de l\'ajout du candidat ICE:', error));
 });
 
-setInterval(() => {
-  peerConnection.getStats().then(stats => {
+const debugInfos = document.getElementById('debug-infos');
+
+if (isCallStarted) {
+  setInterval(() => {
+    peerConnection.getStats().then(stats => {
     stats.forEach(report => {
       if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-        console.log('Latence:', report.jitter);
-        console.log('Paquets perdus:', report.packetsLost);
+        document.getElementById('latency').innerText = report.jitter;
+        document.getElementById('packet-loss').innerText = report.packetsLost;
       }
     });
-  });
-}, 1000);
-
-socket.emit('join-room', roomId);
+    });
+  }, 1000);
+}

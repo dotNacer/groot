@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Voice Chat</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>WebRTC Voice Chat</h1>
     <button onclick="startCall()">Démarrer l'appel</button>
     <button onclick="stopCall()">Arrêter l'appel</button>
+
+    <div id="debug-infos">
+        <p>Latence: <span id="latency"></span></p>
+        <p>Packet Loss: <span id="packet-loss"></span></p>
+
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>

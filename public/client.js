@@ -6,6 +6,16 @@ let username = null;
 let pingStartTime = 0;
 let latency = 0;
 
+// Au début du fichier, après la déclaration du socket
+if (window.ENV && window.ENV.isDevelopment) {
+    socket.on('disconnect', () => {
+        console.log('Déconnecté du serveur, tentative de reconnexion...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    });
+}
+
 function setUsername() {
     const usernameInput = document.getElementById('username');
     username = usernameInput.value.trim();

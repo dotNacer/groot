@@ -2,14 +2,59 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 
+// Initialisation des structures de données
+const rooms = new Map();
+const userPings = new Map();
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-app.use(express.static('public'));
+// Ajout du middleware pour le rechargement du client en développement
+if (process.env.NODE_ENV === 'development') {
+    const livereload = require('livereload');
+    const connectLivereload = require('connect-livereload');
+    
+    // Création du serveur livereload
+    const liveReloadServer = livereload.createServer();
+    liveReloadServer.watch([
+        __dirname + '/public'
+    ]);
 
-const rooms = new Map();
-const userPings = new Map();
+    // Ajout du middleware au serveur Express
+    app.use(connectLivereload());
+    
+    // Rechargement de la page quand le serveur redémarre
+    liveReloadServer.server.once("connection", () => {
+        setTimeout(() => {
+            liveReloadServer.refresh("/");
+        }, 100);
+    });
+}
+
+// Middleware pour injecter les variables d'environnement
+app.use((req, res, next) => {
+    if (req.url === '/') {
+        const originalSend = res.send;
+        res.send = function(html) {
+            if (typeof html === 'string') {
+                html = html.replace('</head>', `
+                    <script>
+                        window.ENV = {
+                            isDevelopment: ${process.env.NODE_ENV === 'development'}
+                        };
+                    </script>
+                    </head>
+                `);
+            }
+            return originalSend.call(this, html);
+        };
+    }
+    next();
+});
+
+// Servir les fichiers statiques
+app.use(express.static('public'));
 
 io.on('connection', (socket) => {
     let pingInterval;

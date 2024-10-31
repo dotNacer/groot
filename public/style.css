@@ -42,7 +42,9 @@ input {
     color: #fff;
 }
 
-#username-form, #room-interface, #call-controls {
+#username-form,
+#room-interface,
+#call-controls {
     margin: 20px;
 }
 
@@ -63,6 +65,24 @@ input {
     border-radius: 5px;
 }
 
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.voice-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #666;
+}
+
+.voice-indicator.active {
+    background-color: #4caf50;
+    box-shadow: 0 0 5px #4caf50;
+}
+
 .latency {
     padding: 3px 8px;
     border-radius: 3px;
@@ -70,15 +90,15 @@ input {
 }
 
 .latency-good {
-    background-color: #4CAF50;
+    background-color: #4caf50;
 }
 
 .latency-medium {
-    background-color: #FFC107;
+    background-color: #ffc107;
 }
 
 .latency-bad {
-    background-color: #F44336;
+    background-color: #f44336;
 }
 
 .room-header {
@@ -89,7 +109,7 @@ input {
 }
 
 .leave-btn {
-    background-color: #F44336;
+    background-color: #f44336;
     color: white;
 }
 

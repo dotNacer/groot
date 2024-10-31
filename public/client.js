@@ -1,111 +1,100 @@
 const socket = io();
-let peerConnection;
-const configuration = {
-  iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
-  iceTransportPolicy: 'all',
-  iceCandidatePoolSize: 10,
-  bundlePolicy: 'max-bundle',
-  rtcpMuxPolicy: 'require',
-  sdpSemantics: 'unified-plan',
-  encodings: [
-    { maxBitrate: 64000, maxFramerate: 15 }
-  ]
-};
+let currentRoom = null;
+let username = null;
 
-const roomId = 'test-room'; // Vous pouvez générer un ID unique pour chaque salle
+// Ajout des variables pour la gestion du ping
+let pingStartTime = 0;
+let latency = 0;
 
-let isCallStarted = false;
-
-socket.on('user-connected', () => {
-  console.log('Un autre utilisateur s\'est connecté');
-  if (!isCallStarted) {
-    startCall();
-  }
-});
-
-function startCall() {
-  if (isCallStarted){
-    console.log('Appel déjà en cours');
-    return;
-  }
-  isCallStarted = true;
-  socket.emit('join-room', roomId);
-
-
-  navigator.mediaDevices.getUserMedia({
-    audio: {
-      echoCancellation: false,
-      noiseSuppression: false,
-      autoGainControl: false,
+function setUsername() {
+    const usernameInput = document.getElementById('username');
+    username = usernameInput.value.trim();
+    
+    if (username) {
+        socket.emit('set_username', username);
     }
-  })
-    .then(stream => {
-      peerConnection = new RTCPeerConnection(configuration);
-      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-
-      peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-          socket.emit('ice-candidate', event.candidate, roomId);
-        }
-      };
-
-      peerConnection.ontrack = event => {
-        const audio = new Audio();
-        audio.srcObject = event.streams[0];
-        audio.play();
-      };
-
-      createAndSendOffer();
-    })
-    .catch(error => console.error('Erreur lors de l\'accès au microphone:', error));
 }
 
-function stopCall() {
-  peerConnection.close();
-  peerConnection = null;
-  socket.emit('leave-room', roomId);
+socket.on('username_set', () => {
+    document.getElementById('username-form').style.display = 'none';
+    document.getElementById('room-interface').style.display = 'block';
+});
+
+function createRoom() {
+    const roomName = document.getElementById('room-name').value.trim();
+    if (roomName) {
+        socket.emit('create_room', roomName);
+        joinRoom(roomName);
+    }
 }
 
-function createAndSendOffer() {
-  peerConnection.createOffer()
-    .then(offer => peerConnection.setLocalDescription(offer))
-    .then(() => {
-      socket.emit('offer', peerConnection.localDescription, roomId);
-    })
-    .catch(error => console.error('Erreur lors de la création de l\'offre:', error));
+function joinRoom(roomName) {
+    currentRoom = roomName;
+    socket.emit('join_room', roomName);
+    document.getElementById('room-interface').style.display = 'none';
+    document.getElementById('call-controls').style.display = 'block';
+    document.getElementById('connected-users').innerHTML = '';
+    document.getElementById('current-room-name').textContent = `Salle : ${roomName}`;
 }
 
-socket.on('offer', offer => {
-  peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
-    .then(() => peerConnection.createAnswer())
-    .then(answer => peerConnection.setLocalDescription(answer))
-    .then(() => {
-      socket.emit('answer', peerConnection.localDescription, roomId);
-    })
-    .catch(error => console.error('Erreur lors de la réponse à l\'offre:', error));
-});
-
-socket.on('answer', answer => {
-  peerConnection.setRemoteDescription(new RTCSessionDescription(answer))
-    .catch(error => console.error('Erreur lors de la définition de la réponse distante:', error));
-});
-
-socket.on('ice-candidate', candidate => {
-  peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-    .catch(error => console.error('Erreur lors de l\'ajout du candidat ICE:', error));
-});
-
-const debugInfos = document.getElementById('debug-infos');
-
-if (isCallStarted) {
-  setInterval(() => {
-    peerConnection.getStats().then(stats => {
-    stats.forEach(report => {
-      if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-        document.getElementById('latency').innerText = report.jitter;
-        document.getElementById('packet-loss').innerText = report.packetsLost;
-      }
+socket.on('rooms_list', (rooms) => {
+    const roomsList = document.getElementById('rooms-list');
+    roomsList.innerHTML = '';
+    
+    rooms.forEach(room => {
+        const li = document.createElement('li');
+        li.className = 'room-item';
+        li.innerHTML = `
+            ${room}
+            <button onclick="joinRoom('${room}')">Rejoindre</button>
+        `;
+        roomsList.appendChild(li);
     });
+});
+
+socket.on('user_joined', (username) => {
+    console.log(`${username} a rejoint la room ${currentRoom}`);
+});
+
+// Gestion du ping/pong
+socket.on('ping', () => {
+    pingStartTime = Date.now();
+    socket.emit('ping');
+});
+
+socket.on('pong', () => {
+    latency = Date.now() - pingStartTime;
+    socket.emit('latency', latency);
+});
+
+// Mise à jour de la liste des utilisateurs
+socket.on('users_update', (users) => {
+    const usersList = document.getElementById('connected-users');
+    usersList.innerHTML = '';
+    
+    users.forEach(user => {
+        const li = document.createElement('li');
+        li.className = 'user-item';
+        li.innerHTML = `
+            <span class="username">${user.username}</span>
+            <span class="latency ${getLatencyClass(user.latency)}">${user.latency}ms</span>
+        `;
+        usersList.appendChild(li);
     });
-  }, 1000);
+});
+
+// Fonction utilitaire pour déterminer la classe CSS en fonction de la latence
+function getLatencyClass(latency) {
+    if (latency < 100) return 'latency-good';
+    if (latency < 200) return 'latency-medium';
+    return 'latency-bad';
+}
+
+function leaveRoom() {
+    if (currentRoom) {
+        socket.emit('leave_room', currentRoom);
+        currentRoom = null;
+        document.getElementById('call-controls').style.display = 'none';
+        document.getElementById('room-interface').style.display = 'block';
+    }
 }

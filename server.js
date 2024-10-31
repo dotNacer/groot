@@ -8,38 +8,107 @@ const io = socketIo(server);
 
 app.use(express.static('public'));
 
+const rooms = new Map();
+const userPings = new Map();
+
 io.on('connection', (socket) => {
-  // console.log('Un utilisateur s\'est connecté au site WEB.');
+    let pingInterval;
+    
+    socket.on('ping', () => {
+        socket.emit('pong');
+    });
 
-  socket.on('offer', (offer, roomId) => {
-    socket.to(roomId).emit('offer', offer);
-  });
+    socket.on('latency', (latency) => {
+        if (socket.username && socket.roomName) {
+            userPings.set(socket.username, latency);
+            io.to(socket.roomName).emit('users_update', Array.from(rooms.get(socket.roomName)).map(username => ({
+                username,
+                latency: userPings.get(username) || 0
+            })));
+        }
+    });
 
-  socket.on('answer', (answer, roomId) => {
-    socket.to(roomId).emit('answer', answer);
-  });
+    socket.on('set_username', (username) => {
+        socket.username = username;
+        socket.emit('username_set');
+        io.emit('rooms_list', Array.from(rooms.keys()));
+    });
 
-  socket.on('ice-candidate', (candidate, roomId) => {
-    socket.to(roomId).emit('ice-candidate', candidate);
-  });
+    socket.on('create_room', (roomName) => {
+        if (!rooms.has(roomName)) {
+            rooms.set(roomName, new Set());
+            io.emit('rooms_list', Array.from(rooms.keys()));
+        }
+    });
 
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-    socket.to(roomId).emit('user-connected');
+    socket.on('join_room', (roomName) => {
+        if (rooms.has(roomName)) {
+            socket.roomName = roomName;
+            socket.join(roomName);
+            rooms.get(roomName).add(socket.username);
+            io.to(roomName).emit('user_joined', socket.username);
+            
+            io.to(roomName).emit('users_update', Array.from(rooms.get(roomName)).map(username => ({
+                username,
+                latency: userPings.get(username) || 0
+            })));
 
-    console.log('Un utilisateur s\'est connecté à la salle ' + roomId);
-  });
+            pingInterval = setInterval(() => {
+                socket.emit('ping');
+            }, 2000);
+        }
+    });
 
-  socket.on('leave-room', (roomId) => {
-    socket.leave(roomId);
-    socket.to(roomId).emit('user-disconnected');
+    socket.on('leave_room', (roomName) => {
+        if (rooms.has(roomName)) {
+            socket.leave(roomName);
+            rooms.get(roomName).delete(socket.username);
+            
+            if (rooms.get(roomName).size === 0) {
+                rooms.delete(roomName);
+                io.emit('rooms_list', Array.from(rooms.keys()));
+            } else {
+                io.to(roomName).emit('users_update', Array.from(rooms.get(roomName)).map(username => ({
+                    username,
+                    latency: userPings.get(username) || 0
+                })));
+            }
 
-    console.log('Un utilisateur s\'est déconnecté de la salle ' + roomId);
-  });
+            if (pingInterval) {
+                clearInterval(pingInterval);
+                pingInterval = null;
+            }
+            
+            userPings.delete(socket.username);
+            
+            socket.roomName = null;
+        }
+    });
 
-  // socket.on('disconnect', () => {
-  //   console.log('Un utilisateur s\'est déconnecté du site WEB.');
-  // });
+    socket.on('disconnect', () => {
+        if (pingInterval) {
+            clearInterval(pingInterval);
+        }
+        
+        if (socket.username) {
+            userPings.delete(socket.username);
+        }
+
+        rooms.forEach((users, roomName) => {
+            if (users.has(socket.username)) {
+                users.delete(socket.username);
+                if (users.size === 0) {
+                    rooms.delete(roomName);
+                } else {
+                    io.to(roomName).emit('users_update', Array.from(users).map(username => ({
+                        username,
+                        latency: userPings.get(username) || 0
+                    })));
+                }
+            }
+        });
+        io.emit('rooms_list', Array.from(rooms.keys()));
+    });
 });
 
 const PORT = process.env.PORT || 3000;

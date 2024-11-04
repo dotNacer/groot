@@ -5,6 +5,7 @@ const socketIo = require('socket.io')
 // Initialisation des structures de données
 const rooms = new Map()
 const userPings = new Map()
+const userVoiceLevels = new Map()
 
 const app = express()
 const server = http.createServer(app)
@@ -149,6 +150,7 @@ io.on('connection', (socket) => {
 
         if (socket.username) {
             userPings.delete(socket.username)
+            userVoiceLevels.delete(socket.username)
         }
 
         rooms.forEach((users, roomName) => {
@@ -212,6 +214,22 @@ io.on('connection', (socket) => {
     socket.on('user_stopped_call', (roomName) => {
         if (rooms.has(roomName)) {
             io.to(roomName).emit('user_stopped_call', socket.username)
+        }
+    })
+
+    socket.on('voice_level', ({ level, room }) => {
+        if (socket.username && rooms.has(room)) {
+            userVoiceLevels.set(socket.username, level)
+
+            // Envoyer la mise à jour aux utilisateurs
+            io.to(room).emit(
+                'users_update',
+                Array.from(rooms.get(room)).map((username) => ({
+                    username,
+                    latency: userPings.get(username) || 0,
+                    voiceLevel: userVoiceLevels.get(username) || 0,
+                }))
+            )
         }
     })
 })

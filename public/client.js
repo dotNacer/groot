@@ -13,6 +13,12 @@ let peerConnections = new Map() // Pour stocker les connexions avec les autres u
 // Ajoutons une Map pour suivre qui est en appel
 const usersInCall = new Set()
 
+// Ajout des variables pour l'analyse audio
+let audioContext
+let audioAnalyser
+let dataArray
+let animationFrameId
+
 // Au début du fichier, après la déclaration du socket
 if (window.ENV && window.ENV.isDevelopment) {
     socket.on('disconnect', () => {
@@ -94,12 +100,27 @@ socket.on('users_update', (users) => {
     users.forEach((user) => {
         const li = document.createElement('li')
         li.className = 'user-item'
+
+        // Déterminer la couleur en fonction du niveau
+        let color
+        const level = user.voiceLevel || 0
+        if (level < 40) {
+            color = '#4caf50' // Vert pour niveau normal
+        } else if (level < 70) {
+            color = '#ffc107' // Jaune pour niveau moyen
+        } else {
+            color = '#f44336' // Rouge pour niveau élevé
+        }
+
         li.innerHTML = `
             <div class="user-info">
                 <div class="voice-indicator ${
                     usersInCall.has(user.username) ? 'active' : ''
                 }"></div>
                 <span class="username">${user.username}</span>
+                <div class="voice-level">
+                    <div class="voice-level-bar" style="height: ${level}%; background-color: ${color}"></div>
+                </div>
             </div>
             <span class="latency ${getLatencyClass(user.latency)}">${
             user.latency
@@ -135,10 +156,37 @@ async function startCall() {
 
         usersInCall.add(username)
         updateUsersDisplay()
+
+        // Configurer l'analyseur audio
+        audioContext = new AudioContext()
+        const audioSource = audioContext.createMediaStreamSource(localStream)
+        audioAnalyser = audioContext.createAnalyser()
+        audioAnalyser.fftSize = 256
+        audioSource.connect(audioAnalyser)
+
+        dataArray = new Uint8Array(audioAnalyser.frequencyBinCount)
+
+        // Démarrer l'analyse du niveau vocal
+        analyzeAudio()
     } catch (err) {
         console.error("Erreur lors de l'accès au microphone:", err)
         alert("Impossible d'accéder au microphone. Vérifiez les permissions.")
     }
+}
+
+// Nouvelle fonction pour analyser l'audio
+function analyzeAudio() {
+    audioAnalyser.getByteFrequencyData(dataArray)
+    const average = dataArray.reduce((a, b) => a + b) / dataArray.length
+    const normalizedValue = Math.min(100, (average / 128) * 100)
+
+    // Envoyer le niveau vocal au serveur
+    socket.emit('voice_level', {
+        level: normalizedValue,
+        room: currentRoom,
+    })
+
+    animationFrameId = requestAnimationFrame(analyzeAudio)
 }
 
 // Fonction pour arrêter l'appel
@@ -164,6 +212,14 @@ function stopCall() {
 
         usersInCall.delete(username)
         updateUsersDisplay()
+
+        // Arrêter l'analyse audio
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId)
+        }
+        if (audioContext) {
+            audioContext.close()
+        }
     }
 }
 

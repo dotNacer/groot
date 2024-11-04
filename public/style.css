@@ -116,3 +116,21 @@ input {
 .leave-btn:hover {
     background-color: #d32f2f;
 }
+
+.voice-level {
+    width: 4px;
+    height: 30px;
+    background-color: #333;
+    border-radius: 2px;
+    margin-left: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.voice-level-bar {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background-color: #4caf50;
+    transition: height 0.1s ease, background-color 0.1s ease;
+}

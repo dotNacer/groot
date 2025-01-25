@@ -1,50 +1,106 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebRTC Voice Chat</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <h1 id="title">g.root</h1>
-    
-    <!-- Formulaire de pseudo -->
-    <div id="username-form">
-        <input type="text" id="username" placeholder="Entrez votre pseudo">
-        <button onclick="setUsername()">Valider</button>
-    </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>WebRTC Voice Chat</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <h1 id="title">g.root</h1>
 
-    <!-- Interface de room (initialement cachée) -->
-    <div id="room-interface" style="display: none;">
-        <div id="create-room">
-            <input type="text" id="room-name" placeholder="Nom de la room">
-            <button onclick="createRoom()">Créer une room</button>
+        <!-- Formulaire de pseudo -->
+        <div id="username-form">
+            <input
+                type="text"
+                id="username"
+                placeholder="Entrez votre pseudo"
+            />
+            <button onclick="setUsername()">Valider</button>
         </div>
 
-        <div id="available-rooms">
-            <h2>Salles disponibles :</h2>
-            <ul id="rooms-list"></ul>
-        </div>
-    </div>
+        <!-- Interface de room (initialement cachée) -->
+        <div id="room-interface" style="display: none">
+            <div id="create-room">
+                <input
+                    type="text"
+                    id="room-name"
+                    placeholder="Nom de la room"
+                />
+                <button onclick="createRoom()">Créer une room</button>
+            </div>
 
-    <!-- Contrôles d'appel (initialement cachés) -->
-    <div id="call-controls" style="display: none;">
-        <div class="room-header">
-            <h2 id="current-room-name"></h2>
-            <button onclick="leaveRoom()" class="leave-btn">Quitter la salle</button>
+            <div id="available-rooms">
+                <h2>Salles disponibles :</h2>
+                <ul id="rooms-list"></ul>
+            </div>
         </div>
-        <button onclick="startCall()">Démarrer l'appel</button>
-        <button onclick="stopCall()">Arrêter l'appel</button>
-        
-        <!-- Nouvelle section pour les utilisateurs -->
-        <div id="users-list">
-            <h3>Utilisateurs connectés :</h3>
-            <ul id="connected-users"></ul>
-        </div>
-    </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
-</body>
+        <!-- Contrôles d'appel (initialement cachés) -->
+        <div id="call-controls" style="display: none">
+            <div class="room-header">
+                <div class="room-info">
+                    <h2 id="current-room-name"></h2>
+                    <span id="audio-playing-indicator" style="display: none"
+                        >🎵</span
+                    >
+                </div>
+                <button onclick="leaveRoom()" class="leave-btn">
+                    Quitter la salle
+                </button>
+            </div>
+            <button onclick="startCall()">Démarrer l'appel</button>
+            <button onclick="stopCall()">Arrêter l'appel</button>
+
+            <!-- Nouvelle section pour l'upload et la lecture de fichiers -->
+            <div id="file-controls" style="display: none">
+                <div class="file-upload">
+                    <input
+                        type="file"
+                        id="audio-file"
+                        accept="audio/*"
+                        onchange="handleFileUpload(event)"
+                    />
+                    <button onclick="uploadFile()" id="upload-btn">
+                        Upload
+                    </button>
+                </div>
+                <div class="audio-controls">
+                    <button
+                        onclick="broadcastAudio('play')"
+                        id="play-btn"
+                        disabled
+                    >
+                        Play
+                    </button>
+                    <button
+                        onclick="broadcastAudio('pause')"
+                        id="pause-btn"
+                        disabled
+                    >
+                        Pause
+                    </button>
+                    <button
+                        onclick="broadcastAudio('stop')"
+                        id="stop-btn"
+                        disabled
+                    >
+                        Stop
+                    </button>
+                </div>
+                <div class="spectrum-container">
+                    <canvas id="audio-spectrum"></canvas>
+                </div>
+            </div>
+
+            <!-- Nouvelle section pour les utilisateurs -->
+            <div id="users-list">
+                <h3>Utilisateurs connectés :</h3>
+                <ul id="connected-users"></ul>
+            </div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="client.js"></script>
+    </body>
 </html>

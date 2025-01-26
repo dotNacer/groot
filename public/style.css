@@ -1,5 +1,253 @@
 body {
     background-color: #111;
     color: #fff;
-    font-family: Arial, sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Geist Mono", sans-serif;
+}
+
+h1#title {
+    padding: 20px 0 0 20px;
+}
+
+button {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.room-item {
+    list-style: none;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #222;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+input {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    background-color: #222;
+    color: #fff;
+}
+
+#username-form,
+#room-interface,
+#call-controls {
+    margin: 20px;
+}
+
+#users-list {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #222;
+    border-radius: 5px;
+}
+
+.user-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #333;
+    border-radius: 5px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.host-crown {
+    color: gold;
+    font-size: 1.2em;
+}
+
+.host-message {
+    color: gold;
+    font-style: italic;
+    margin-left: 10px;
+}
+
+.voice-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #666;
+}
+
+.voice-indicator.active {
+    background-color: #4caf50;
+    box-shadow: 0 0 5px #4caf50;
+}
+
+.latency {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.latency-good {
+    background-color: #4caf50;
+}
+
+.latency-medium {
+    background-color: #ffc107;
+}
+
+.latency-bad {
+    background-color: #f44336;
+}
+
+.room-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.room-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.audio-playing-indicator {
+    color: #4caf50;
+    font-size: 1.2em;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+    100% {
+        opacity: 0.5;
+        transform: scale(0.95);
+    }
+}
+
+.leave-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.leave-btn:hover {
+    background-color: #d32f2f;
+}
+
+.voice-level {
+    width: 4px;
+    height: 30px;
+    background-color: #333;
+    border-radius: 2px;
+    margin-left: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.voice-level-bar {
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background-color: #4caf50;
+    transition: height 0.1s ease, background-color 0.1s ease;
+}
+
+#file-controls {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #222;
+    border-radius: 5px;
+}
+
+.file-upload {
+    margin-bottom: 15px;
+}
+
+.file-upload input[type="file"] {
+    margin-right: 10px;
+    padding: 5px;
+    background-color: #333;
+    border-radius: 5px;
+    color: #fff;
+}
+
+.audio-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.audio-controls button {
+    flex: 1;
+    min-width: 60px;
+}
+
+.audio-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#upload-btn {
+    background-color: #2196f3;
+    color: white;
+}
+
+#play-btn {
+    background-color: #4caf50;
+    color: white;
+}
+
+#pause-btn {
+    background-color: #ff9800;
+    color: white;
+}
+
+#stop-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+#mute-btn {
+    background-color: #666;
+    color: white;
+    min-width: 44px;
+}
+
+#mute-btn.muted {
+    background-color: #e91e63;
+}
+
+.spectrum-container {
+    margin-top: 15px;
+    width: 100%;
+    height: 100px;
+    background-color: #333;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+#audio-spectrum {
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
 }

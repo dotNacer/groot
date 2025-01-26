@@ -1,3 +1,5 @@
+uploads/
+
 # Node.js specific files and directories
 node_modules/
 npm-debug.log

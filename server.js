@@ -315,6 +315,10 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`Serveur en écoute sur le port ${PORT}`);
+const HOST = "0.0.0.0"; // Écouter sur toutes les interfaces réseau
+server.listen(PORT, HOST, () => {
+    console.log(`Serveur en écoute sur http://${HOST}:${PORT}`);
+    console.log(
+        "Pour accéder depuis un autre appareil du réseau, utilise ton adresse IP locale"
+    );
 });

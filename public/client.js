@@ -9,6 +9,7 @@ let sharedAudioAnalyser = null;
 let sharedAudioSource = null;
 let spectrumAnimationId = null;
 let isAudioPlaying = false;
+let isMuted = false;
 
 // Ajout des variables pour la gestion du ping
 let pingStartTime = 0;
@@ -403,6 +404,7 @@ function leaveRoom() {
         stopSpectrum();
         showAudioPlayingIndicator(false);
         selectedFile = null;
+        isMuted = false;
 
         document.getElementById("call-controls").style.display = "none";
         document.getElementById("room-interface").style.display = "block";
@@ -477,12 +479,25 @@ function enableAudioControls() {
     document.getElementById("play-btn").disabled = false;
     document.getElementById("pause-btn").disabled = false;
     document.getElementById("stop-btn").disabled = false;
+    document.getElementById("mute-btn").disabled = false;
 }
 
 function disableAudioControls() {
     document.getElementById("play-btn").disabled = true;
     document.getElementById("pause-btn").disabled = true;
     document.getElementById("stop-btn").disabled = true;
+    document.getElementById("mute-btn").disabled = true;
+}
+
+function toggleMute() {
+    if (!sharedAudio) return;
+
+    isMuted = !isMuted;
+    sharedAudio.muted = isMuted;
+
+    const muteBtn = document.getElementById("mute-btn");
+    muteBtn.textContent = isMuted ? "🔇" : "🔊";
+    muteBtn.classList.toggle("muted", isMuted);
 }
 
 // Gestion de la lecture audio
@@ -493,6 +508,7 @@ socket.on("file_uploaded", (filename) => {
     }
 
     sharedAudio = new Audio(`/uploads/${filename}`);
+    sharedAudio.muted = isMuted;
     showAudioPlayingIndicator(false);
 
     if (isHost) {

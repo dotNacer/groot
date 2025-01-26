@@ -199,6 +199,7 @@ input {
 
 .audio-controls button {
     flex: 1;
+    min-width: 60px;
 }
 
 .audio-controls button:disabled {
@@ -224,6 +225,16 @@ input {
 #stop-btn {
     background-color: #f44336;
     color: white;
+}
+
+#mute-btn {
+    background-color: #666;
+    color: white;
+    min-width: 44px;
+}
+
+#mute-btn.muted {
+    background-color: #e91e63;
 }
 
 .spectrum-container {
